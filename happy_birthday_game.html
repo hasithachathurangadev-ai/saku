@@ -1,0 +1,332 @@
+<!--
+Happy Birthday Mini-Game
+File: happy-birthday-game.html
+Single-file HTML/CSS/JS game. Open in browser to play.
+Click balloons to pop them. Reach the target to reveal the "Happy Birthday Saku!" message.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Happy Birthday Saku! 🎉</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#ff5c8a;
+      --accent2:#ffd166;
+      --glass: rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(255,92,138,0.08), transparent),
+                  radial-gradient(800px 400px at 90% 90%, rgba(255,209,102,0.06), transparent),
+                  var(--bg);
+      color:#e6eef8;
+      padding:24px;
+    }
+
+    .container{
+      width:100%;max-width:980px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.03);
+      overflow:hidden;
+    }
+
+    header{display:flex;align-items:center;gap:16px;padding:8px 12px}
+    .title{
+      font-size:20px;font-weight:700;letter-spacing:0.2px;
+    }
+    .subtitle{font-size:13px;color:rgba(230,238,248,0.7)}
+
+    .game-area{
+      position:relative;height:420px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+      border-radius:12px;margin:12px;padding:12px;overflow:hidden;display:flex;flex-direction:column;
+    }
+
+    .sky{flex:1;position:relative;overflow:hidden}
+    .ground{height:72px;background:linear-gradient(180deg,#071022,#05101b);border-radius:10px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;padding:8px 14px}
+
+    .score-box{display:flex;flex-direction:column;gap:4px}
+    .score{font-weight:700;font-size:18px}
+    .instructions{font-size:13px;color:rgba(230,238,248,0.75)}
+
+    /* balloon */
+    .balloon{
+      position:absolute;border-radius:50% 50% 50% 50%;width:86px;height:110px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;
+      transform-origin:center bottom;transition:transform .12s ease-out;
+      box-shadow:0 10px 20px rgba(2,6,23,0.6), inset 0 -6px 18px rgba(0,0,0,0.15);
+    }
+    .balloon:active{transform:scale(.95)}
+    .balloon .shine{position:absolute;left:18%;top:14%;width:26%;height:26%;border-radius:50%;opacity:.15}
+    .string{position:absolute;bottom:-26px;left:50%;width:2px;height:28px;background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.1));transform:translateX(-50%)}
+
+    /* colors */
+    .b1{background:linear-gradient(180deg,#ff9fb0,#ff5c8a)}
+    .b2{background:linear-gradient(180deg,#ffd9a6,#ffb86b)}
+    .b3{background:linear-gradient(180deg,#b8e8ff,#6fd3ff)}
+    .b4{background:linear-gradient(180deg,#c8ffd7,#76f0a8)}
+
+    /* pop effect */\    
+    .pop{animation:popAnim .45s forwards}
+    @keyframes popAnim{
+      0%{transform:scale(1);opacity:1}
+      50%{transform:scale(1.6) rotate(10deg);opacity:.6}
+      100%{transform:scale(0);opacity:0}
+    }
+
+    /* confetti */
+    .confetti{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none}
+
+    .message{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+      background:linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.6));backdrop-filter: blur(4px);
+    }
+    .message h1{font-size:36px;margin:0}
+    .message p{margin:0;color:rgba(230,238,248,0.9)}
+
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;padding:8px 14px;border-radius:10px;color:#081223;font-weight:700;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--accent2)}
+
+    footer{padding:8px 12px;text-align:center;color:rgba(230,238,248,0.6);font-size:13px}
+
+    @media(max-width:560px){
+      .balloon{width:64px;height:82px}
+      .message h1{font-size:26px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <div class="title">Happy Birthday Game for Saku 🎉</div>
+        <div class="subtitle">Pop balloons to reveal the surprise — reach the target to unlock the message!</div>
+      </div>
+    </header>
+
+    <div class="game-area">
+      <div class="sky" id="sky"></div>
+      <div class="ground">
+        <div class="score-box">
+          <div class="score">Score: <span id="score">0</span></div>
+          <div class="instructions">Pop <span id="target">8</span> balloons to celebrate!</div>
+        </div>
+        <div class="controls">
+          <button class="btn" id="startBtn">Start</button>
+          <button class="btn secondary" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <!-- confetti canvas -->
+      <canvas id="confettiCanvas" class="confetti"></canvas>
+
+      <!-- hidden message -->
+      <div id="message" class="message" style="display:none;">
+        <h1>Happy Birthday, Saku! 💖</h1>
+        <p>To my sweetest Solemate — loving you is my favorite adventure.</p>
+        <div>
+          <button class="btn" id="playAgain">Play Again</button>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>Made with ❤️ — Click balloons, make a wish, and send this to Saku!</footer>
+  </div>
+
+  <script>
+    // Game settings
+    const sky = document.getElementById('sky');
+    const scoreEl = document.getElementById('score');
+    const targetEl = document.getElementById('target');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const messageBox = document.getElementById('message');
+    const playAgain = document.getElementById('playAgain');
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const ctx = confettiCanvas.getContext('2d');
+
+    let score = 0;
+    let target = 8;
+    let running = false;
+    let balloons = [];
+    let spawnInterval;
+
+    // responsive canvas
+    function resizeCanvas(){
+      confettiCanvas.width = sky.clientWidth;
+      confettiCanvas.height = sky.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // helper: random
+    const rand = (min, max) => Math.random()*(max-min)+min;
+
+    function createBalloon(){
+      const b = document.createElement('div');
+      b.className = 'balloon b'+(Math.floor(rand(1,5)));
+      const w = sky.clientWidth; const h = sky.clientHeight;
+      const size = rand(64,100);
+      b.style.width = size + 'px';
+      b.style.height = (size*1.25)+'px';
+      const left = rand(10, w - size - 10);
+      b.style.left = left + 'px';
+      b.style.bottom = '-140px';
+
+      // random float duration and delay
+      const duration = rand(8000,16000);
+      const delay = rand(0,1000);
+      b.style.transition = `transform ${duration}ms linear ${delay}ms, bottom ${duration}ms linear ${delay}ms`;
+
+      // shine + string
+      const shine = document.createElement('div'); shine.className='shine'; b.appendChild(shine);
+      const string = document.createElement('div'); string.className='string'; b.appendChild(string);
+
+      // add click handler
+      b.addEventListener('click', (e)=>{
+        popBalloon(b);
+      });
+
+      sky.appendChild(b);
+
+      // animate upward using setTimeout so CSS transition runs
+      requestAnimationFrame(()=>{
+        b.style.bottom = (h + 60) + 'px';
+      });
+
+      // cleanup after animation
+      const life = duration + delay + 1200;
+      const timeoutId = setTimeout(()=>{
+        if(b.parentElement) b.remove();
+      }, life);
+
+      balloons.push({el:b, timeoutId});
+    }
+
+    function popBalloon(b){
+      if(!b || b.classList.contains('popped') ) return;
+      b.classList.add('popped');
+      b.classList.add('pop');
+      // small sound using WebAudio (simple pop)
+      playPop();
+
+      // score
+      score += 1; updateScore();
+
+      // remove after animation
+      setTimeout(()=>{ if(b.parentElement) b.remove(); }, 450);
+
+      checkWin();
+    }
+
+    function updateScore(){ scoreEl.textContent = score }
+    function checkWin(){
+      if(score >= target && running){
+        showMessage();
+      }
+    }
+
+    function showMessage(){
+      running = false;
+      clearInterval(spawnInterval);
+      // play confetti
+      startConfetti();
+      messageBox.style.display = 'flex';
+    }
+
+    // controls
+    startBtn.addEventListener('click', ()=>{
+      if(running) return;
+      resetGame();
+      running = true;
+      startSpawning();
+    });
+    resetBtn.addEventListener('click', ()=>{ resetGame(); });
+    playAgain.addEventListener('click', ()=>{ messageBox.style.display='none'; resetGame(); startSpawning(); running=true });
+
+    function resetGame(){
+      // clear balloons
+      balloons.forEach(b=>{ clearTimeout(b.timeoutId); if(b.el.parentElement) b.el.remove(); });
+      balloons = [];
+      score = 0; updateScore();
+      messageBox.style.display = 'none';
+      stopConfetti();
+      running = false;
+    }
+
+    function startSpawning(){
+      resizeCanvas();
+      spawnInterval = setInterval(()=>{
+        // spawn 1-2 balloons per tick
+        const n = Math.random() < 0.25 ? 2 : 1;
+        for(let i=0;i<n;i++) createBalloon();
+      }, 900);
+    }
+
+    // simple pop sound with WebAudio
+    function playPop(){
+      try{
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type='triangle';
+        o.frequency.setValueAtTime(900, ctx.currentTime);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); o.stop(ctx.currentTime + 0.22);
+      }catch(e){ /* ignore if not allowed */ }
+    }
+
+    // --- confetti implementation (lightweight) ---
+    let confettiPieces = [];
+    let confettiRunning = false;
+    function startConfetti(){
+      confettiRunning = true; confettiPieces = [];
+      const W = confettiCanvas.width; const H = confettiCanvas.height;
+      for(let i=0;i<120;i++){
+        confettiPieces.push({
+          x: rand(0,W), y: rand(-H,0), r: rand(6,12), d: rand(2,6),
+          tilt: rand(-15,15), tiltSpeed: rand(0.02,0.1), color: pick(['#ff5c8a','#ffd166','#6fd3ff','#76f0a8'])
+        });
+      }
+      renderConfetti();
+      setTimeout(()=>{ confettiRunning = false }, 6000);
+    }
+    function stopConfetti(){ confettiRunning=false; clearCanvas() }
+
+    function renderConfetti(){
+      if(!confettiRunning) return clearCanvas();
+      ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+      confettiPieces.forEach(p=>{
+        p.y += p.d; p.tilt += p.tiltSpeed; p.x += Math.sin(p.tilt)*1.2;
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        ctx.rotate(p.tilt*Math.PI/180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.6);
+        ctx.restore();
+      });
+      confettiPieces = confettiPieces.filter(p=>p.y < confettiCanvas.height+40);
+      requestAnimationFrame(renderConfetti);
+    }
+    function clearCanvas(){ ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height); }
+
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+
+    // initial setup
+    (function init(){
+      resizeCanvas();
+      targetEl.textContent = target;
+      updateScore();
+    })();
+
+  </script>
+</body>
+</html>
